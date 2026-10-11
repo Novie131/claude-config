@@ -3,11 +3,20 @@
 
 只在跨過門檻、或之後每多 STEP 個 token 時提醒一次，避免每輪都提醒。
 門檻可用環境變數 CONTEXT_REMIND_TOKENS 覆寫（測試時可設低一點）。
+
+「上次檢查時在哪一格」記在狀態檔，而不是拿最後兩次 API 呼叫比較：
+一個回合內常有多次工具呼叫，跨門檻多半發生在回合中間，
+等到下一則訊息時最後兩次都已超過門檻，就永遠不會提醒。
 """
 import json, os, sys
 
 THRESHOLD = int(os.environ.get("CONTEXT_REMIND_TOKENS", "120000"))
 STEP = 40000
+KEEP = 50  # 狀態檔只留最近這麼多個對話
+STATE_PATH = os.path.join(
+    os.environ.get("CLAUDE_PLUGIN_DATA") or os.path.dirname(os.path.abspath(__file__)),
+    ".context-check-state.json",
+)
 
 
 def context_sizes(path):
@@ -35,17 +44,36 @@ def bucket(n):
     return -1 if n < THRESHOLD else (n - THRESHOLD) // STEP
 
 
+def remember(path, now_bucket):
+    """記下這個對話目前在哪一格，回傳上次記的那一格（沒記過當作 -1）。"""
+    try:
+        with open(STATE_PATH) as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        state = {}
+    prev = state.pop(path, -1)
+    state[path] = now_bucket  # 重新放到最後，越後面越新
+    for old in list(state)[:-KEEP]:
+        del state[old]
+    tmp = STATE_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f)
+    os.replace(tmp, STATE_PATH)
+    return prev
+
+
 def main():
     try:
         path = json.load(sys.stdin).get("transcript_path")
         sizes = context_sizes(path) if path else []
+        if not sizes:
+            return
+        now = sizes[-1]
+        # 壓縮後 context 變小，格子跟著往回記，之後再跨過門檻會再提醒
+        prev = remember(path, bucket(now))
     except Exception:
         return  # 任何錯誤都不擋使用者的訊息
-    if not sizes:
-        return
-    now = sizes[-1]
-    prev = sizes[-2] if len(sizes) > 1 else 0
-    if bucket(now) < 0 or bucket(now) <= bucket(prev):
+    if bucket(now) < 0 or bucket(now) <= prev:
         return
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "UserPromptSubmit",
