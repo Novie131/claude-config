@@ -1,0 +1,17 @@
+# 白名單：預設全部忽略，只開放明確列出的設定檔。
+# ~/.claude 內有對話紀錄、shell 快照、登入資料等，絕不能進版本控制。
+*
+
+!.gitignore
+!README.md
+!CLAUDE.md
+!settings.json
+
+!agents/
+!agents/*.md
+
+!hooks/
+!hooks/*.py
+
+!notes/
+!notes/*.md

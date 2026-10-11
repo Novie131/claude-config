@@ -1,5 +1,12 @@
 {
   "model": "opus",
+  "syncClaudeAiSkills": false,
+  "autoCompactWindow": 200000,
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "python3 ~/.claude/hooks/context-check.py" } ] }
+    ]
+  },
   "enabledPlugins": {
     "mattpocock-skills@claude-plugins-official": true
   },
