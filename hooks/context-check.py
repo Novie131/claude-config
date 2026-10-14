@@ -80,7 +80,10 @@ def main():
         "additionalContext": (
             f"目前對話的 context 約為 {now // 1000}k tokens，已超過 {THRESHOLD // 1000}k 的提醒門檻。"
             "依使用者的 CLAUDE.md 規則，此時應先更新 handoff.md（不論使用者是否 /clear），"
-            "並在回答結尾提醒使用者：若手上這件事已告一段落，可以執行 /clear。"
+            "再依當下情況，在回答結尾給使用者一句可直接複製的指令："
+            "事情已告一段落 → /clear；做到一半 → /compact 保留<替使用者寫好要保留的決定與進度>；"
+            "後半段多是除錯或探索雜訊 → /rewind 選<指出從哪一則訊息開始>，再按 Summarize from here。"
+            "並說明不處理的話，約 150k 會自動壓縮，時機和重點都不是自己選的。"
         ),
     }}, ensure_ascii=False))
 
