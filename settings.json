@@ -1,7 +1,8 @@
 {
   "model": "opus",
   "syncClaudeAiSkills": false,
-  "autoCompactWindow": 200000,
+  "autoCompactWindow": 183000,
+  "statusLine": { "type": "command", "command": "python3 ~/.claude/hooks/statusline.py" },
   "hooks": {
     "UserPromptSubmit": [
       { "hooks": [ { "type": "command", "command": "python3 ~/.claude/hooks/context-check.py" } ] }
